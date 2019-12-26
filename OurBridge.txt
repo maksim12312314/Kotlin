@@ -1,0 +1,119 @@
+managed  (expo)
+bare
+
+expo init --template bare-minimum
+
+react-native start
+react-native run-android --verbose
+
+Основная дока
+https://proandroiddev.com/react-native-bridge-with-kotlin-b2afde2f70b
+
+очистка предыдущей сборки
+gradlew clean
+
+android build.gradle
+
+kotlin_version = "1.3.61"
+в dependencies 
+classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+
+
+в app/build gradle
+сверху
+
+apply plugin: "kotlin-android"
+apply plugin: "kotlin-android-extensions"
+
+в dependedcies
+	implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+
+В папке
+/app/src/main/java/com/project_name
+создаем три файла - один класс активности
+MainActivity.kt
+один - для регистрации модуля package
+TestPackage.kt
+один - для запуска котлин активити и реализации функции getName()
+TestManager.kt
+
+Все три файла должны содержать название пакета
+package com.example.sufferserega
+
+в app\src\main\res нужно создать папку layout
+сюда кладем xml
+
+правильно импортировать ресурсы
+для проекта 
+в файле активности MainActivity.kt должен быть импорт
+import com.ourbridge.R
+
+в /app/src/main
+В AndroidManifest вставить имя активности
+
+<activity android:name=".MainActivity2" />
+
+Вставить в TestManager
+
+import android.content.Intent
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReactContextBaseJavaModule
+import com.facebook.react.bridge.ReactMethod
+
+
+class TestManager(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
+
+    override fun getName(): String {
+        return "KotlinVideoStream"
+    }
+
+    @ReactMethod
+    fun playVideoStream(videoTitle: String, videoUrl: String) {
+        val intent = Intent(reactApplicationContext, MainActivity2::class.java)
+        intent.putExtra("videoTitle", videoTitle)
+        intent.putExtra("videoUrl", videoUrl)
+        reactApplicationContext.startActivity(intent)
+    }
+
+}
+
+
+в TestPackage
+
+import com.facebook.react.ReactPackage
+import com.facebook.react.bridge.NativeModule
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.uimanager.ViewManager
+import java.util.*
+
+class TestPackage : ReactPackage {
+    override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
+        val modules = ArrayList<NativeModule>()
+        modules.add(TestManager(reactContext))
+        return modules
+    }
+
+    override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
+        return Collections.emptyList<ViewManager<*, *>>()
+    }
+
+}
+
+
+правим MainApplication.java
+в начало вставляем импорт нашего Package
+
+import com.example.sufferserega.TestPackage;
+
+А затем вот этот блок
+@Override
+protected List<ReactPackage> getPackages() {
+  return Arrays.<ReactPackage>asList(
+    new MainReactPackage(),
+    new TestPackage()
+  );
+}
+
+
+правим путем добавления одной строки new TestPackage()
